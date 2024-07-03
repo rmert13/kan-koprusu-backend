@@ -1,0 +1,39 @@
+# docker-compose up -d --build
+
+services:
+  blood_donation_app:
+    image: blood_donation_app
+    container_name: blood_donation_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5093:5193"
+    depends_on:
+      - "hims_user_db"
+    restart: always
+    environment:
+      - POSTGRES_CONNECTION_STRING=Host=hims_user_db;Port=5432;Database=BloodDonation;Username=postgres;Password=postgres;Pooling=true;
+      - REDIS_CONNECTION_STRING=redis://hims_session_cache:6379
+
+  hims_session_cache:
+    image: redis/redis-stack-server:latest
+    container_name: hims_session_cache
+    restart: always
+    volumes:
+      - blood_donation_cache_volume:/var/lib/redis
+
+  hims_user_db:
+    image: postgres:latest
+    container_name: hims_user_db
+    restart: always
+    volumes:
+      - blood_donation_db_volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=users
+
+volumes:
+  blood_donation_db_volume:
+  blood_donation_cache_volume:
